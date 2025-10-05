@@ -10,6 +10,7 @@
 #include <utility>
 #include <algorithm>
 #include <concepts>
+#include "constexpr_utilities.hpp"
 
 template<class T>
 concept ActivationFunction = requires(float x) {
@@ -88,11 +89,10 @@ public:
         std::get<0>(layers).forward(input);
 
         if constexpr (nLayers > 2) {
-            [&]<std::size_t... I>(std::index_sequence<I...>) {
-                ( (std::get<I + 1>(layers).forward(std::get<I>(layers).a)), ... );
-            }(std::make_index_sequence<nLayers - 2>{});
+            static_for<nLayers - 2>([&]<auto I> {
+                std::get<I + 1>(layers).forward(std::get<I>(layers).a);
+            });
         }
-
         const auto& last = std::get<nLayers - 2>(layers).a;
         return last;
     }
